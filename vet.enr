@@ -1,0 +1,106 @@
+---
+title: "Huvo_graphic"
+author: "Hudson Miller"
+date: "1/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Veteran Enrollment Graphics"
+output: html_document
+---
+
+```{r, include=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+library(ggthemes)
+library(plotly)
+library(grid)
+library(scales)
+library(gridExtra)
+library(ggrepel)
+library(magick)
+library(png)
+library(cowplot)
+library(RColorBrewer)
+
+img <- readPNG("S2S.png")
+
+
+Vet_enrollment <- read_excel("Vet_enrollment.xlsx")
+
+College_data <- read_excel("College_data.xlsx")
+College_data <- College_data %>%  filter(College_data$`College Name` != "Columbia U School of General Studies")
+College_data.2 <- College_data %>% pivot_longer(!'College Name', names_to = "Year", values_to = "Veteran Enrollment") 
+
+names(College_data.2) <- c("University", "Year", "Enrollment")
+College_data.2 <- College_data.2 %>% na.omit()
+
+```
+
+
+
+```{r, echo=FALSE}
+
+
+vet_graph <- ggplot(Vet_enrollment, aes(Year, Number, color = Type)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2) +
+  scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  labs(title = "Harvard Undergraduate Veteran \nFall Enrollment", color = "Applicant Type:") + geom_label_repel(aes(label = Number),
+                  box.padding   = 0.35, 
+                  point.padding = 0.25,
+                  segment.color = 'grey50',
+                  show.legend = FALSE) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(), legend.title = element_text(size = 9, face = "bold"), plot.title = element_text(hjust = 0.5), plot.caption = element_text(colour = "black"), legend.position = "top") +
+  ylab("Number of New Enrollees") + geom_vline(xintercept = 2017, linetype="dashed", size=1) + geom_text(aes(x=2016.1, label="Harvard partnership with\n Vetlink & Service To School", y = 11.5), colour="black", vjust = 1.2)
+
+
+grid.newpage()
+
+text.Name <- textGrob('HUvets.com',
+                      x=unit(0, 'npc'), 
+                      gp=gpar(col='white',
+                              family='sans',
+                              fontsize=8), 
+                      hjust=0)
+
+text.Source <- textGrob(' Source(s): Harvard College: Admissions & Financial Aid', 
+                        x=unit(1, 'npc'), gp=gpar(col='white', family='',
+                                                  fontsize=8),
+                        hjust=1)
+footer = grobTree(rectGrob(gp=gpar(fill='#5B5E5F', lwd=0)), text.Name, 
+                  text.Source)
+
+vet.graph.final <- grid.arrange(vet_graph, footer, heights=unit(c(0.94, 0.06), 
+                                                            c('npc', 'npc')))
+
+Final.plot <- ggdraw() +
+  draw_plot(vet.graph.final) + draw_image(
+    img, scale = 0.2, x = 0.01, y = .1) 
+
+Final.plot
+ggsave("huvo.plot.png")
+```
+
+```{r}
+
+College_data.2$Year <- College_data.2$Year %>% as.integer()
+
+Col.plot <- College_data.2 %>%  ggplot(aes(Year, Enrollment, color = University)) + geom_line() + geom_point() + labs(title = "Undergraduate Veteran Enrollment", caption = "Source(s): Inside Higher Education") + theme_fivethirtyeight() + theme(legend.title = element_blank(), legend.position="top", plot.title = element_text(hjust = 0.5)) + scale_color_brewer(palette = "Spectral") + scale_y_continuous(breaks = c(0, 10, 20, 30, 40, 50, 60, 70)) + scale_x_continuous(breaks = c(2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020))
+
+final.vet.plot <- ggplotly(Col.plot) %>% layout(annotations = list(text = 'Source: Inside Higher Education',
+                            font = list(size = 12),
+                            showarrow = FALSE,
+                            xref = 'paper', x = -0.03,
+                            yref = 'paper', y = -0.2))
+
+htmlwidgets::saveWidget(as_widget(final.vet.plot), "final.vet.plot.html")
+
+```
