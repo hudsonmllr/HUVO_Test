@@ -99,8 +99,10 @@ final.vet.plot <- ggplotly(Col.plot) %>% layout(annotations = list(text = 'Sourc
                             font = list(size = 12),
                             showarrow = FALSE,
                             xref = 'paper', x = -0.03,
-                            yref = 'paper', y = -0.2))
+                            yref = 'paper', y = -0.08))
 
-htmlwidgets::saveWidget(as_widget(final.vet.plot), "final.vet.plot.html")
+final.vet.plot
+
+htmlwidgets::saveWidget(final.vet.plot, "finl.vet.plot.html")
 
 ```
